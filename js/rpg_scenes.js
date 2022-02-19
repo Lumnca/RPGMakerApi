@@ -446,6 +446,7 @@ Scene_Title.prototype.create = function() {
     this.createForeground();
     this.createWindowLayer();
     this.createCommandWindow();
+
 };
 
 Scene_Title.prototype.start = function() {
@@ -736,11 +737,15 @@ Scene_Map.prototype.createDisplayObjects = function() {
     this.createMapNameWindow();
     this.createWindowLayer();
     this.createAllWindows();
+
 };
 
 Scene_Map.prototype.createSpriteset = function() {
     this._spriteset = new Spriteset_Map();
     this.addChild(this._spriteset);
+    let w = new Window_MySelf(0,0,400,160);
+    w.scale.set(0.6)
+    this.addChild(w);
 };
 
 Scene_Map.prototype.createAllWindows = function() {
@@ -751,6 +756,7 @@ Scene_Map.prototype.createAllWindows = function() {
 Scene_Map.prototype.createMapNameWindow = function() {
     this._mapNameWindow = new Window_MapName();
     this.addChild(this._mapNameWindow);
+    
 };
 
 Scene_Map.prototype.createMessageWindow = function() {
@@ -764,6 +770,7 @@ Scene_Map.prototype.createMessageWindow = function() {
 Scene_Map.prototype.createScrollTextWindow = function() {
     this._scrollTextWindow = new Window_ScrollText();
     this.addWindow(this._scrollTextWindow);
+
 };
 
 Scene_Map.prototype.updateTransferPlayer = function() {

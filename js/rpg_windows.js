@@ -715,6 +715,7 @@ Window_Base.prototype.reserveFaceImages = function() {
 // Window_Selectable
 //
 // The window class with cursor movement and scroll functions.
+// 窗口类具有光标移动和滚动功能。
 
 function Window_Selectable() {
     this.initialize.apply(this, arguments);
@@ -737,6 +738,7 @@ Window_Selectable.prototype.initialize = function(x, y, width, height) {
     this.deactivate();
 };
 
+//
 Window_Selectable.prototype.index = function() {
     return this._index;
 };
@@ -1291,6 +1293,7 @@ Window_Selectable.prototype.refresh = function() {
 // Window_Command
 //
 // The superclass of windows for selecting a command.
+// 用于选择命令的windows超类。
 
 function Window_Command() {
     this.initialize.apply(this, arguments);
