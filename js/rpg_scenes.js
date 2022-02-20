@@ -743,9 +743,6 @@ Scene_Map.prototype.createDisplayObjects = function() {
 Scene_Map.prototype.createSpriteset = function() {
     this._spriteset = new Spriteset_Map();
     this.addChild(this._spriteset);
-    let w = new Window_MySelf(0,0,400,160);
-    w.scale.set(0.6)
-    this.addChild(w);
 };
 
 Scene_Map.prototype.createAllWindows = function() {
@@ -1005,8 +1002,16 @@ Scene_Menu.prototype.createCommandWindow = function() {
     this._commandWindow.setHandler('save',      this.commandSave.bind(this));
     this._commandWindow.setHandler('gameEnd',   this.commandGameEnd.bind(this));
     this._commandWindow.setHandler('cancel',    this.popScene.bind(this));
+    this._commandWindow.setHandler('task',   this.commandTask.bind(this));
     this.addWindow(this._commandWindow);
 };
+
+Scene_Menu.prototype.commandTask = function(){
+    console.log('task')
+    this._commandWindow.activate();
+    this._statusWindow.setHandler('ok',     this.onPersonalOk.bind(this));
+    this._statusWindow.setHandler('cancel', this.onPersonalCancel.bind(this));
+}
 
 Scene_Menu.prototype.createGoldWindow = function() {
     this._goldWindow = new Window_Gold(0, 0);

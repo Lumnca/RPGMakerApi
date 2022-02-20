@@ -1448,7 +1448,7 @@ Window_Command.prototype.refresh = function() {
 // Window_HorzCommand
 //
 // The command window for the horizontal selection format.
-
+// 水平选择格式的命令窗口。一行4列
 function Window_HorzCommand() {
     this.initialize.apply(this, arguments);
 }
@@ -1476,6 +1476,7 @@ Window_HorzCommand.prototype.itemTextAlign = function() {
 // Window_Help
 //
 // The window for displaying the description of the selected item.
+// 用于显示所选项目描述的窗口。
 
 function Window_Help() {
     this.initialize.apply(this, arguments);
@@ -1591,12 +1592,18 @@ Window_MenuCommand.prototype.numVisibleRows = function() {
 
 Window_MenuCommand.prototype.makeCommandList = function() {
     this.addMainCommands();
+    this.addTaskCommand();
     this.addFormationCommand();
     this.addOriginalCommands();
     this.addOptionsCommand();
     this.addSaveCommand();
     this.addGameEndCommand();
+ 
 };
+
+Window_MenuCommand.prototype.addTaskCommand = function(){
+    this.addCommand('任务', 'task');
+}
 
 Window_MenuCommand.prototype.addMainCommands = function() {
     var enabled = this.areMainCommandsEnabled();
