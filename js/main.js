@@ -24,9 +24,13 @@ Scene_MySelf.prototype.initialize = function() {
 Scene_MySelf.prototype.create = function(){
     Scene_Base.prototype.create.call(this);
     this.createWindowLayer();
-    let w = new Window_Gold(0,240);
-    this.addWindow(w);
 
+    this._w = new Window_SkillType(0,0);
+
+ 
+    this.addWindow(this._w);
+ 
+    window.w = this._w;
 }
 
 function Window_MySelf() {
