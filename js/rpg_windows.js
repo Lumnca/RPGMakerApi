@@ -1980,7 +1980,6 @@ Window_ItemList.prototype.isEnabled = function(item) {
 };
 
 Window_ItemList.prototype.makeItemList = function() {
-    console.log('init')
     this._data = $gameParty.allItems().filter(function(item) {
         return this.includes(item);
     }, this);
@@ -1996,7 +1995,6 @@ Window_ItemList.prototype.selectLast = function() {
 
 Window_ItemList.prototype.drawItem = function(index) {
     var item = this._data[index];
-    console.log(item)
     if (item) {
         var numberWidth = this.numberWidth();
         var rect = this.itemRect(index);
