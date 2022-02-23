@@ -25,8 +25,14 @@ Scene_MySelf.prototype.create = function(){
     Scene_Base.prototype.create.call(this);
     this.createWindowLayer();
 
-    this._w = new Window_EquipItem(0,0,780,440);
+    this._w = new Window_ShopCommand(720);
+    let item = new Window_ShopStatus(0,490,720,160);
+    let ws = new  Window_ShopBuy(0,90,400,[[0,1,],[1,2,0],[2,2,0]]);
+
+    ws.setStatusWindow(item);
     this.addWindow(this._w);
+    this.addWindow(ws);
+    this.addWindow(item);
     window.w = this._w;
 }
 
