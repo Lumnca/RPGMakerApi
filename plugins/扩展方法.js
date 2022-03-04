@@ -22,6 +22,12 @@ String.prototype.getLineText = function(){
 
 String.prototype.getKeyAndValue = function(){
     let datas = this.split(":");
+    if(datas.length < 2){
+        return {
+            key : null,
+            value : null
+        }
+    }
     return {
         key : datas[0].trim(),
         value :datas[1].trim()
@@ -37,7 +43,7 @@ String.prototype.getJSONdata = function(){
         try{
             return JSON.parse(json);
         }
-        catch{
+        catch(e){
             console.error("不规范JSON字符串")
             return null;
         }
