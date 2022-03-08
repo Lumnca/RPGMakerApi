@@ -18,12 +18,19 @@
 *===================================================
 *@help
 *===================================================
+*
 * 这个插件可以让你在战斗计算中添加穿甲属性。使用方法在战斗伤害计算公式中添加穿甲计算即可如:
 *
 * a.atk * (1 - (b.def - a._ack) / (b.def + 200))
 *
 * _ack : 物理穿透
 * _mck : 魔法穿透
+*
+* 为装备增加穿甲只需要在装备备注中添加如下标签即可:
+*
+* <ack:10>
+* <mck:10>
+*
 *
 * ============================================================================
 * Plugin Commands
@@ -40,6 +47,10 @@
 * Version 1.0:
 * 初始创建
 * 
+* Version 2.0:
+*
+* 修改状态界面显示问题。取消显示装备信息！
+*
 */
 //=============================================================================
 
@@ -49,6 +60,9 @@ Object.assign(Lumnca.Param, PluginManager.parameters('攻击穿透添加'))
 Lumnca.Param.atkText = Lumnca.Param.atkText===''?'物理穿透':Lumnca.Param.atkText;
 Lumnca.Param.mtkText = Lumnca.Param.mtkText===''?'魔法穿透':Lumnca.Param.mtkText;
 
+
+(function(){
+
 //=============================================================
 //为角色添加穿透属性
 //==============================================================
@@ -56,8 +70,8 @@ Lumnca.Param.mtkText = Lumnca.Param.mtkText===''?'魔法穿透':Lumnca.Param.mtk
 const Game_BattlerBase_initMembers = Game_BattlerBase.prototype.initMembers;
 Game_BattlerBase.prototype.initMembers = function () {
     Game_BattlerBase_initMembers.call(this);
-    this._ack = 9;
-    this._mck = 5;
+    this._ack = 0;
+    this._mck = 0;
 };
 
 
@@ -67,29 +81,7 @@ Game_BattlerBase.prototype.initMembers = function () {
 const Window_Status_drawParameters = Window_Status.prototype.drawParameters;
 Window_Status.prototype.drawParameters = function (x, y) {
     Window_Status_drawParameters.call(this, x, y);
-    var lineHeight = this.lineHeight();
-    this.changeTextColor(this.systemColor());
-    this.drawText(Lumnca.Param.atkText, x, y + lineHeight * 6, 160);
-    this.resetTextColor();
-    this.drawText(this._actor._ack, x + 160, y + lineHeight * 6, 60, 'right');
-    //魔法穿透
-    this.changeTextColor(this.systemColor());
-    this.drawText(Lumnca.Param.mtkText, x, y + lineHeight * 7, 160);
-    this.resetTextColor();
-    this.drawText(this._actor._mck, x + 160, y + lineHeight * 7, 60, 'right');
-};
-Window_Status.prototype.refresh = function () {
-    this.contents.clear();
-    if (this._actor) {
-        var lineHeight = this.lineHeight();
-        this.drawBlock1(lineHeight * 0);
-        this.drawHorzLine(lineHeight * 1);
-        this.drawBlock2(lineHeight * 2);
-        this.drawHorzLine(lineHeight * 6);
-        this.drawBlock3(lineHeight * 7);
-        this.drawHorzLine(lineHeight * 15);//取消下划线原13行，添加显示两行
-        this.drawBlock4(lineHeight * 14);
-    }
+    
 };
 
 //=============================================================
@@ -98,7 +90,19 @@ Window_Status.prototype.refresh = function () {
 Window_EquipStatus.prototype.numVisibleRows = function () {
     return 9;
 };
-
+//不再显示装备
+Window_Status.prototype.drawEquipments = function(x, y) {
+    var lineHeight = this.lineHeight();
+    this.changeTextColor(this.systemColor());
+    this.drawText(Lumnca.Param.atkText, x, y, 160);
+    this.resetTextColor();
+    this.drawText(this._actor._ack, x + 160, y, 60, 'right');
+    //魔法穿透
+    this.changeTextColor(this.systemColor());
+    this.drawText(Lumnca.Param.mtkText, x, y + lineHeight, 160);
+    this.resetTextColor();
+    this.drawText(this._actor._mck, x + 160, y + lineHeight, 60, 'right');
+};
 
 const Window_EquipStatus_refresh = Window_EquipStatus.prototype.refresh;
 Window_EquipStatus.prototype.refresh = function () {
@@ -191,34 +195,11 @@ Game_Actor.prototype.penetratingDamage = function (slotId,item) {
 }
 
 
-Game_Actor.prototype.isHasPenetrating = function (item) {
-    if (!item) {
-        return false;
-    }
-    let n = item.note.split("\n");
-    let f = false;
-    n.forEach(e => {
-        if (e.indexOf('ack') > -1) {
-            f = true;
-        }
-        if (e.indexOf('mck') > -1) {
-            f = true;
-        }
-    });
-    return f;
-}
-
-
 Game_Actor.prototype.noteExtra = function (item) {
     let values = [0, 0]
-    let n = item.note.getLineText();
-    n.forEach(e => {
-        if (e.indexOf('ack') > -1 && e.getKeyAndValue().key === "ack") {
-            values[0] = parseInt(e.getKeyAndValue().value);
-        }
-        else if (e.indexOf('mck') > -1 && e.getKeyAndValue().key === "mck") {
-            values[1] = parseInt(e.getKeyAndValue().value);
-        }
-    });
+    let meta = item.meta;
+    values[0] = meta["ack"]? Number(meta["ack"]) : 0;
+    values[1] = meta["mck"]? Number(meta["mck"]) : 0;
     return values;
 }
+}());
