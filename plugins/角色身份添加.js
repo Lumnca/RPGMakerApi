@@ -62,6 +62,7 @@ Lumnca.Param.CharacterIdenName = Lumnca.Param.CharacterIdenName===''? '身份':L
 Lumnca.Param.CharacterPrestige = Lumnca.Param.CharacterPrestige===''? '声望':Lumnca.Param.CharacterPrestige;
 Lumnca.Param.CharacterWomanName =  Lumnca.Param.CharacterWomanName===''? '女':Lumnca.Param.CharacterWomanName;
 Lumnca.Param.CharacterManName =  Lumnca.Param.CharacterManName===''? '男':Lumnca.Param.CharacterManName;
+Lumnca.Param.CharacterSex = ["男","女","?"]
 //==============================================================
 //为状态窗口添加身份信息
 //=============================================================
@@ -82,9 +83,9 @@ Window_Status.prototype.drawBlock2 = function(y) {
     this.drawText(this._actor._iden, _x1 + 64, y+lineHeight, 160,'right');
     //绘制性别
     this.changeTextColor(this.systemColor());
-    this.drawText("性别", _x1,  y+lineHeight, 160);
+    this.drawText("性别", _x1,  y+lineHeight*2, 160);
     this.resetTextColor();
-    this.drawText(this._actor.sex(), _x1 + 64, y+lineHeight, 160,'right');
+    this.drawText(Lumnca.Param.CharacterSex[this._actor.sex()], _x1 + 64, y+lineHeight*2, 160,'right');
 };
 
 
@@ -101,9 +102,20 @@ Game_Actor.prototype.setup = function(actorId) {
 Game_Actor.prototype.dataRead = function(actorId){
 
    let meta = $dataActors[actorId].meta;
-   this["_iden"] = meta["iden"]? meta["iden"] : "平民";
-   this["_pres"] = meta["pres"]? meta["pres"] : 0;
-   this["_sex"] =  meta["sex"]?  meta["sex"]  : 0;
+
+    for (const key in meta) {
+        if (meta.hasOwnProperty(key)) {
+            if(isNaN(meta[key])){
+                this["_"+key] = meta[key];
+            }
+            else{
+                this["_"+key] = Number(meta[key]);
+            }
+        }
+    }
+   this["_iden"] =  this["_iden"] || "平民";
+   this["_pres"] =   this["_pres"] ||  0;
+   this["_sex"] =  this["_sex"] ||  0;
 }
 
 
@@ -116,11 +128,6 @@ Game_Actor.prototype.getPres = function(){
 }
 
 Game_Actor.prototype.sex = function(){
-    if(this._sex){
-        return Lumnca.Param.CharacterManName;
-    }
-    else{
-        return Lumnca.Param.CharacterWomanName;
-    }
+   return Number(this._sex);
 }
 

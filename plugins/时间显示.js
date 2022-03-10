@@ -131,7 +131,7 @@ Window_GameDate.prototype.initialize = function(){
     this._initTime = new Date();
     var x = Math.max(Lumnca.Param.X);
     var y = Math.max(Lumnca.Param.Y);
-    Window_Base.prototype.initialize.call(this, Graphics.width - this.windowWidth(), Graphics.height - this.windowHeight(), this.windowWidth(),this.windowHeight());
+    Window_Base.prototype.initialize.call(this, Graphics.width - this.windowWidth(), 0, this.windowWidth(),this.windowHeight());
    // this.setBackgroundType(1);
    // this.hideBackgroundDimmer();
    this.createButton();
@@ -147,7 +147,6 @@ Window_GameDate.prototype.createButton = function(){
     button.setHotFrame(0,48,96,48);
     button.scale.x = 0.5;
     button.scale.y = 0.5;
-    console.log(button)
     button.x = this.windowWidth() -  52;
     button.y = 4;
     button.setClickHandler(()=>{
