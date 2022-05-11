@@ -24,10 +24,12 @@
  *
  * 
  * Version 1.0:实现了可以在游戏场景中显示其他玩家。在同一个地图下才会显示！移动延时和速度具有差异
+ * 
+ * Version 1.1:添加显示系统通知和聊天显示信息窗口，玩家对话联机开启
  *
  */
 
-var parameters = PluginManager.parameters('联网插件');
+var parameters = PluginManager.parameters('NetWork');
 var url = parameters['serverUrl'];
 var maxPlayer = Number(parameters['maxPlayer']) || 5;
 var emety = parameters['eventTemplate'];
@@ -111,6 +113,10 @@ function subscribe() {
             })
         }
     });
+    stompClient.subscribe("/topic/chat/"+data.id,function(res){
+        const msg = JSON.parse(res.body);
+        $gameMessage.add(`[${msg.name}]:${msg.content}`);
+    })
 }
 
 function showLog(text) {
@@ -123,6 +129,40 @@ function showLog(text) {
         SceneManager._scene.logWindow = logw;
         logw.addText(text);
     }
+}
+function showtalk(msg){
+    if (SceneManager._scene.logWindow) {
+        SceneManager._scene.logWindow.showTalk(msg);
+    }
+    else {
+        let logw = new Window_MessageLog();
+        SceneManager._scene.addChild(logw);
+        SceneManager._scene.logWindow = logw;
+        SceneManager._scene.logWindow.showTalk(msg);
+    }
+}
+
+
+function showSys(msg){
+    if (SceneManager._scene.logWindow) {
+        SceneManager._scene.logWindow.addSysMessage(msg);
+    }
+    else {
+        let logw = new Window_MessageLog();
+        SceneManager._scene.addChild(logw);
+        SceneManager._scene.logWindow = logw;
+        SceneManager._scene.logWindow.addSysMessage(msg);
+    }
+}
+
+let msg = {
+    id : data.id,
+    content : '测试消息',
+    to : 2,
+    name : data.name
+}
+function talk(msg){
+    send('/app/user',msg);
 }
 //=======================================================================================================================================================
 
@@ -339,7 +379,7 @@ Scene_Map.prototype.onMapLoaded = function(){
                 }
             })
         }
-    })
+    });
 }
 
 
@@ -357,11 +397,15 @@ Window_MessageLog.prototype.initialize = function () {
     Window_Selectable.prototype.initialize.call(this, 0, 0, width, height);
     this.opacity = 0;
     this._lines = [];
+    this._talks = [];
+    this._sys = [];
     this._methods = [];
     this._waitCount = 0;
     this._waitMode = '';
     this._baseLineStack = [];
     this._spriteset = null;
+    this._speed = 0;
+    this._sysTextWidth = 0;
     this.createBackBitmap();
     this.createBackSprite();
     this.refresh();
@@ -380,18 +424,47 @@ Window_MessageLog.prototype.windowHeight = function () {
 };
 
 Window_MessageLog.prototype.maxLines = function () {
-    return 10;
+    return 18;
 };
 
 Window_MessageLog.prototype.createBackBitmap = function () {
     this._backBitmap = new Bitmap(this.width, this.height);
+    this._backBitmap2 = new Bitmap(this.width, this.height);
+    this._talkBitmap = new Bitmap(this.width, this.height);
+    this._sysBitmap =  new Bitmap(this.width, this.height);
 };
+
+Window_MessageLog.prototype.createSysMessage = function(msg){
+    let width = this._sysBitmap.measureTextWidth(msg);
+    this._sysBitmap =  new Bitmap(width, this.height);
+    this._sysBitmap.drawText(msg,0,0,width,this.lineHeight())
+    this._sysSprite.bitmap =  this._sysBitmap;
+    this._sysSprite.x = this.windowWidth();
+    this._sysTextWidth = width;
+    this._sysBackSprite.visible = true;
+}
 
 Window_MessageLog.prototype.createBackSprite = function () {
     this._backSprite = new Sprite();
     this._backSprite.bitmap = this._backBitmap;
     this._backSprite.y = this.y;
     this.addChildToBack(this._backSprite);
+    this._talkSprite = new Sprite();
+    this._talkSprite.bitmap = this._talkBitmap;
+    this._talkSprite.y = Graphics.boxHeight;
+    this.addChildToBack(this._talkSprite);
+    this.drawTalkBackground();
+
+    this._sysSprite = new Sprite();
+    this._sysSprite.bitmap = this._sysBitmap;
+    this._sysSprite.y = 100;
+    this.addChildToBack(this._sysSprite);
+
+    this._sysBackSprite = new Sprite();
+    this._sysBackSprite.bitmap = this._backBitmap2;
+    this._sysBackSprite.y = 100;
+    this.addChildToBack(this._sysBackSprite);
+    this.drawBackground2();
 };
 
 Window_MessageLog.prototype.numLines = function () {
@@ -406,6 +479,13 @@ Window_MessageLog.prototype.refresh = function () {
     }
 };
 
+Window_MessageLog.prototype.showTalk = function(msg){
+    this._talks.push(msg);
+    this.drawTalkBackground(msg);
+}
+
+
+
 Window_MessageLog.prototype.drawBackground = function () {
     var rect = this.backRect();
     var color = this.backColor();
@@ -414,6 +494,27 @@ Window_MessageLog.prototype.drawBackground = function () {
     this._backBitmap.fillRect(rect.x, rect.y, rect.width, rect.height, color);
     this._backBitmap.paintOpacity = 255;
 };
+
+Window_MessageLog.prototype.drawBackground2 = function(){
+    var color = this.backColor();
+    this._backBitmap2.clear();
+    this._backBitmap2.paintOpacity = this.backPaintOpacity();
+    this._backBitmap2.fillRect(0,0,this.windowWidth(),this.lineHeight(), color);
+    this._backBitmap2.paintOpacity = 255;
+}
+
+Window_MessageLog.prototype.drawTalkBackground = function (txt) {
+    var color = this.backColor();
+    this._talkBitmap.clear();
+    this._talkBitmap.paintOpacity = this.backPaintOpacity();
+    this._talkBitmap.fillRect(0,0,this.windowWidth(),this.lineHeight(), color);
+    this._talkBitmap.paintOpacity = 255;
+    this._talkBitmap.drawText(txt,0,0,this.windowWidth(),this.lineHeight())
+};
+
+Window_MessageLog.prototype.talkWindowShow = function(){
+    
+}
 
 Window_MessageLog.prototype.backRect = function () {
     return {
@@ -448,5 +549,57 @@ Window_MessageLog.prototype.update = function () {
             this.refresh();
             this._waitCount = 0;
         }
+    }
+    this.talkWindowUpate();
+    this.sysWindowUpdate();
+
+}
+
+Window_MessageLog.prototype.addSysMessage = function(msg){
+    this._sys.push(msg);
+    if(!this._showing){
+        this.createSysMessage(msg);
+    }
+}
+
+Window_MessageLog.prototype.sysWindowUpdate = function(){
+    if(this._sysSprite.x>0-this._sysTextWidth){
+        this._sysSprite.x -= 1;
+        this._showing = true;
+    }
+    else{
+        this._sysBackSprite.visible = false;
+        this._sys.shift();
+        this._showing = false;
+        if(this._sys.length>0){
+            this.createSysMessage(this._sys[0]);
+        }
+    }
+}
+
+Window_MessageLog.prototype.talkWindowUpate = function(){
+    this._talkSprite.y += this._speed;
+    if(this._talks.length>0){
+        if(this._talkSprite.y>Graphics.boxHeight-this.lineHeight()){
+            this._speed = -0.2;
+        }
+        else{
+            this._speed = 0;
+            this._waitCount++;
+            if (this._waitCount > 120) {
+                this._talks.shift();
+                this._waitCount = 0;
+            }
+            
+        }
+    }
+    else{
+        if(this._talkSprite.y<Graphics.boxHeight+1){
+            this._speed = 0.2;
+        }
+        else{
+            this._speed = 0;
+        }
+        
     }
 }
