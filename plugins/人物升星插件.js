@@ -5,11 +5,10 @@
  * @author Lumnca
  * 
  *
- * @param imgUrl
- * @text 拼图图集图片名称
+ * @param goldIndex
+ * @text 金币图标索引
  * @desc 
- * 需要做为拼图的图片来源，只需要一张图即可！（请把对应的图片放在img/system目录下）
- * @default 
+ * @default 314
  *
  * 
  * @help
@@ -33,7 +32,8 @@
  * 初始创建
  */
 //================================================================================
-
+const perStarParam = PluginManager.parameters('人物升星插件');
+let iconIndex = Number(perStarParam["goldIndex"]);
 //================================窗口类==========================================
 function Window_SmallMenuActor() {
     this.initialize.apply(this,arguments);
@@ -55,15 +55,6 @@ Window_SmallMenuActor.prototype.drawItem = function(index) {
     this.drawText(actor.name(),x+24,y-32,120);
     this.drawText(actor.getStarLevel(),x-20,y+24,120);
 };
-
-
-
-
-
-
-
-
-
 
 function Window_ActorStarStatus() {
     this.initialize.apply(this,arguments);
@@ -150,6 +141,10 @@ Window_NeedItemWindow.prototype.createTitle = function(){
 
 Window_NeedItemWindow.prototype.createNeedItem = function(){
     let able = true;
+    if(this._needs.length===0){
+        able = false;
+        this._button.visible = false;
+    }
     for (let i = 0; i < this._needs.length; i++) {
         let px = 16+(i+1)*this.lineHeight();
         if(this._needs[i].type==='item'){
@@ -174,7 +169,7 @@ Window_NeedItemWindow.prototype.createNeedItem = function(){
             if(this._needs[i].count > this.getItemNumber(1,this._needs[i].id))able = false;
         }
         else if(this._needs[i].type==='gold'){
-            this.drawIcon(314,0,px);
+            this.drawIcon(iconIndex,0,px);
             this.drawText('金币',36,px);
             this.drawText(this._needs[i].count,0,px,this.width-32,'right');
             if($gameParty.gold()<this._needs[i].count)able = false;
@@ -212,6 +207,7 @@ Window_NeedItemWindow.prototype.createButton = function(){
             this._actor.gainStar(this._needs);
         }
         else{
+            this._button.visible = false;
             this.playBuzzerSound();
         }
     }
@@ -222,8 +218,9 @@ Window_NeedItemWindow.prototype.createButton = function(){
 Window_NeedItemWindow.prototype.setupStarData = function(){
     if(this._actor&&this._actor._starData){
         if(this._actor._starData[this._actor.getNextStarLevel()]){
+            console.log(this._actor._starData)
             let data = JSON.parse(this._actor._starData[this._actor.getNextStarLevel()]);
-            let x = data["需求"]["物品"]
+            let x = data["需求"]["物品"] || [];
             x.forEach(e => {
                 this._needs.push({
                     id : e["物品id"],
@@ -231,7 +228,7 @@ Window_NeedItemWindow.prototype.setupStarData = function(){
                     type : 'item'
                 })
             });
-            let w = data["需求"]["武器"];
+            let w = data["需求"]["武器"] || [];;
             w.forEach(e => {
                 this._needs.push({
                     id : e,
@@ -239,7 +236,7 @@ Window_NeedItemWindow.prototype.setupStarData = function(){
                     type : 'weapon'
                 })
             });
-            let y = data["需求"]["防具"];
+            let y = data["需求"]["防具"] || [];;
             y.forEach(e => {
                 this._needs.push({
                     id : e,
@@ -247,7 +244,7 @@ Window_NeedItemWindow.prototype.setupStarData = function(){
                     type : 'arom'
                 })
             });
-            let z = data["需求"]["金钱"];
+            let z = data["需求"]["金钱"] || 0;
             this._needs.push({
                 id : -1,
                 count : z,
@@ -257,7 +254,6 @@ Window_NeedItemWindow.prototype.setupStarData = function(){
         }
         else{
             this._button.visible = false;
-
         }
     }
 }
@@ -357,6 +353,7 @@ Game_Actor.prototype.getNextStarLevel = function(){
 }
 
 Game_Actor.prototype.gainStar = function(needs){
+    if(!this._starData)return;
     let str = this._starData[this.getNextStarLevel()];
     if(str){
         let data = JSON.parse(str);
@@ -471,8 +468,6 @@ Scene_PStar.prototype.onActorOk = function(){
     //this._actorMenuWindow.deactivate();
     this._actorMenuWindow.playOkSound();
     this._actorMenuWindow.activate();
-
-   
 }
-//
+
    
