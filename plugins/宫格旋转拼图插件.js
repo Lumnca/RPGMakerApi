@@ -28,6 +28,12 @@
  * @desc 场景中拼图图块的大小
  * @default  32
  * 
+ * @param  pd
+ * @text  显示拼图图块的数据
+ * @desc 所有拼图图块的数据
+ * @default [{"col":5,"row":5,"imgs":[[1,1,0,0,1],[1,2,0,1,0],[0,1,0,0,1],[1,1,1,0,1],[1,0,1,1,1]],"result":[[0,0,0,0,0],[1,1,1,1,1],[2,2,2,2,2],[1,1,1,1,1],[1,1,1,1,1]],"time":30},{"col":2,"row":2,"imgs":[[1,1],[1,2]],"result":[[0,0],[0,0]],"time":26}]
+ * 
+ * 
  * @help
  * ============================================================================
  * Introduction
@@ -55,29 +61,24 @@ const pingtuParam = PluginManager.parameters('宫格旋转拼图插件');
 const pingtuGrid = Number(pingtuParam['grid']);
 const pingtuLength = Number(pingtuParam['tlength']);
 const ptGrid = Number(pingtuParam['ptGrid']);
-
+const p = JSON.parse(pingtuParam['pd']);
 var pingtuPage = 0;
 
 
 //拼图数据
 const pt_data = [
     {
-        col : 5,//多少列
-        row : 5,//多少行
+        col : 2,//多少列
+        row : 2,//多少行
         imgs : [  
-            [1,1,0,0,1], //5*5列的图片数据对应数字就对应那个图片第几个图像块
-            [1,2,0,1,0],
-            [0,1,0,0,1],
-            [1,1,1,0,1],
-            [1,0,1,1,1]
+            [42,42], //2*2列的图片数据对应数字就对应那个图片第几个图像块
+            [64,65],
         ],
         result : [      //拼图最终答案0代表图片方向是向上的，1是方向向左的，2是方向向下的，3是方向向右的
-            [0,0,0,0,0],
-            [1,1,1,1,1],
-            [2,2,2,2,2],
-            [1,1,1,1,1],
-            [1,1,1,1,1]
-        ]
+            [-1,-1],
+            [0,0],
+        ],
+        time : 30
     },
     {
         col : 2,//多少列
@@ -89,9 +90,24 @@ const pt_data = [
         result : [      //拼图最终答案0代表图片方向是向上的，1是方向向左的，2是方向向下的，3是方向向右的
             [0,0],
             [0,0],
-        ]
-    }
+        ],
+        time : 26
+    },
+    {},{},{},{}
 ]
+//===================================数据======================================
+const game_System_initializeL = Game_System.prototype.initialize;
+Game_System.prototype.initialize = function(){
+    game_System_initializeL.call(this);
+    this._ptData = pt_data;
+    this._curPt = 0;
+    this._ptStart = false;
+    this._orginPt = [];
+}
+
+Game_System.prototype.getCurPtData = function(){
+    return this._ptData[this._curPt];
+}
 
 //====================拼图精灵对象==============================================
 
@@ -143,16 +159,22 @@ Window_PTHelp.prototype.constructor = Window_PTHelp;
 Window_PTHelp.prototype.initialize = function(rect) {
     Window_Base.prototype.initialize.call(this, rect);
     this._count = 60;
-    this._time = 59;
+    this._time = 19;
     this.refresh();
 };
 
 Window_PTHelp.prototype.createTime = function(){
     this.contents.clear();
     this.drawText("Time - "+this.timeText(),0,0,this.width-this.padding*2,'center');
+    this.drawText("当前拼图序号:"+($gameSystem._curPt+1),0, this.lineHeight()+4,this.width-this.padding*2,'center');
     if(this._time<=0){
         this.drawText("游戏结束",0,100,this.width-this.padding*2,'center');
+        $gameSystem._ptStart = false;
     }
+}
+
+Window_PTHelp.prototype.setPTWindow = function(window){
+    this._ptWindow = window;
 }
 
 Window_PTHelp.prototype.createButtons = function(){
@@ -161,10 +183,22 @@ Window_PTHelp.prototype.createButtons = function(){
     this._reButton.y = this.height - 64;
     this.addChild(this._reButton);
 
+    this._reButton.onClick = ()=>{
+        if(this._ptWindow)this._ptWindow.refresh();
+        this._time = $gameSystem.getCurPtData().time;
+    }
+
+    
+
     this._backButton = new Sprite_Button('pagedown');
     this._backButton.y = this._reButton.y;
     this._backButton.x = this._reButton.x + this._reButton.width + 48;
     this.addChild(this._backButton);
+
+    this._backButton.onClick = ()=>{
+        $gameSystem._ptStart = false;
+        SceneManager.pop();
+    }
 
 
 }
@@ -188,6 +222,7 @@ Window_PTHelp.prototype.update = function(){
 }
 
 Window_PTHelp.prototype.refresh = function(){
+  
     this.createTime();
     this.createButtons();
 }
@@ -213,12 +248,20 @@ Window_PT.prototype.refresh = function(){
 }
 
 Window_PT.prototype.createPT = function(){
-    let data = pt_data[pingtuPage];
+    let data = $gameSystem.getCurPtData();
+    $gameSystem._ptStart = true;
     this._data  = data;
     for (let i = 0; i < data.row; i++) {
         for (let j = 0; j < data.col; j++) {
             let sprite = new Sprite_PT(data.imgs[i][j]);
-            sprite._flag = Math.floor(Math.random()*4);
+            let n = Math.floor(Math.random()*4);
+            if($gameSystem._orginPt[i*data.col+j]>-1){
+                sprite._flag =  $gameSystem._orginPt[i*data.col+j];
+            }
+            else{
+                sprite._flag = n;
+                $gameSystem._orginPt[i*data.col+j] = n;
+            }     
             sprite._result = data.result[i][j];
           
             sprite.setRotation();
@@ -227,9 +270,11 @@ Window_PT.prototype.createPT = function(){
             sprite.y = this.padding/2 + (i+0.5) * sprite._grid;
 
             sprite.onClick = ()=>{
-                sprite._flag++;
-                sprite.setRotation();
-                this.checkSuccess();
+                if($gameSystem._ptStart){
+                    sprite._flag++;
+                    sprite.setRotation();
+                    this.checkSuccess();
+                }
             };
             this.addChild(sprite);
             this._sprites.push(sprite);
@@ -246,6 +291,7 @@ Window_PT.prototype.checkSuccess = function(){
         }
     }
     $gameMessage.add('恭喜你完成拼图！')
+    $gameSystem._ptStart = false;
     SceneManager.pop();
     return true;
 }
@@ -287,42 +333,15 @@ Scene_PT.prototype.create = function() {
    this._phWindow.x = this._ptWindow.width + this._ptWindow.x;
    this._phWindow.y = this._ptWindow.y;
 
+   this._phWindow.setPTWindow(this._ptWindow);
    this.addChild(this._phWindow);
    this.addChild(this._ptWindow);
 };
 
 Scene_PT.prototype.createPT = function(){
-    let data = pt_data[pingtuPage];
-    this._data  = data;
-    for (let i = 0; i < data.row; i++) {
-        for (let j = 0; j < data.col; j++) {
-            let sprite = new Sprite_PT(data.imgs[i][j]);
-            sprite._flag = Math.floor(Math.random()*4);
-            sprite._result = data.result[i][j];
-          
-            sprite.setRotation();
-            sprite.x = (j+0.5) * sprite._grid;
-            sprite.y = (i+0.5) * sprite._grid;
-            sprite.onClick = ()=>{
-                sprite._flag++;
-                sprite.setRotation();
-                this.checkSuccess();
-            };
-            this.addChild(sprite);
-            this._sprites.push(sprite);
-        }
-    }
+   
 }
 
 Scene_PT.prototype.checkSuccess = function(){
-    for (let i = 0; i < this._sprites.length; i++) {
-        const sprite = this._sprites[i];
-        if(sprite._flag !== sprite._result){
-            console.log(i)
-            return false;
-        }
-    }
-    $gameMessage.add('恭喜你完成拼图！')
-    SceneManager.pop();
-    return true;
+
 }
